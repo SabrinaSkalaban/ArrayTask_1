@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="ERROR">
+    <Appenders>
+        <Console name="ConsoleAppender" target="SYSTEM_OUT">
+            <PatternLayout pattern="[%d{HH:mm:ss}] %-5level - %msg%n"/>
+        </Console>
+
+        <File name="SabrinaFileLogger" fileName="logs/sabrina-array-task.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%-5level] %msg%n"/>
+        </File>
+    </Appenders>
+
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="ConsoleAppender"/>
+            <AppenderRef ref="SabrinaFileLogger"/>
+        </Root>
+    </Loggers>
+</Configuration>
