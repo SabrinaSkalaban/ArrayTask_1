@@ -1,16 +1,22 @@
 package by.sabrina.arraytask1.entity;
 
+import by.sabrina.arraytask1.observer.Observer;
+
 import java.util.Arrays;
 
 public class ArrayEntity {
+    private final long id;
     private int[] values;
+    private Observer observer;
 
-    public ArrayEntity() {
-        this.values = new int[0];
+    public ArrayEntity(long id, int[] values) {
+        this.id = id;
+        this.values = (values != null) ? values.clone() : new int[0];
     }
 
-    public ArrayEntity(int[] values) {
-        this.values = (values != null) ? values.clone() : new int[0];
+
+    public long getId() {
+        return id;
     }
 
     public int[] getValues() {
@@ -19,11 +25,24 @@ public class ArrayEntity {
 
     public void setValues(int[] values) {
         this.values = (values != null) ? values.clone() : new int[0];
+        notifyObserver();
     }
 
-    @Override
-    public String toString() {
-        return Arrays.toString(values);
+    public void setElement(int index, int value) {
+        if (index >= 0 && index < values.length) {
+            this.values[index] = value;
+            notifyObserver();
+        }
+    }
+
+    public void setObserver(Observer observer) {
+        this.observer = observer;
+    }
+
+    private void notifyObserver() {
+        if (observer != null) {
+            observer.onUpdate(this);
+        }
     }
 
     @Override
@@ -31,11 +50,19 @@ public class ArrayEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ArrayEntity that = (ArrayEntity) o;
-        return Arrays.equals(values, that.values);
+        return id == that.id && Arrays.equals(values, that.values);
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(values);
+        int prime = 31;
+        int result = Long.hashCode(id);
+        result = prime * result + Arrays.hashCode(values);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ArrayEntity{id=" + id + ", values=" + Arrays.toString(values) + "}";
     }
 }

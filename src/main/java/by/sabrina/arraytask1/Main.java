@@ -1,5 +1,6 @@
 package by.sabrina.arraytask1;
 
+import by.sabrina.arraytask1.comparator.ArrayComparator;
 import by.sabrina.arraytask1.entity.ArrayEntity;
 import by.sabrina.arraytask1.exception.ArrayTaskException;
 import by.sabrina.arraytask1.factory.ArrayFactory;
@@ -8,10 +9,11 @@ import by.sabrina.arraytask1.parser.ArrayParser;
 import by.sabrina.arraytask1.parser.impl.ArrayParserImpl;
 import by.sabrina.arraytask1.reader.ArrayReader;
 import by.sabrina.arraytask1.reader.impl.ArrayReaderImpl;
+import by.sabrina.arraytask1.repository.Repository;
+import by.sabrina.arraytask1.repository.impl.RepositoryImpl;
 import by.sabrina.arraytask1.service.ArrayCalculationService;
 import by.sabrina.arraytask1.service.impl.ArrayCalculationServiceImpl;
-import by.sabrina.arraytask1.service.ArraySortService;
-import by.sabrina.arraytask1.service.impl.ArraySortServiceImpl;
+import by.sabrina.arraytask1.specification.impl.SumSpecification;
 import by.sabrina.arraytask1.validator.ArrayValidator;
 import by.sabrina.arraytask1.validator.impl.ArrayValidatorImpl;
 import org.apache.logging.log4j.LogManager;
@@ -23,59 +25,45 @@ public class Main {
     private static final Logger LOGGER = LogManager.getLogger(Main.class);
 
     public void run() {
+        // Инициализация компонентов
         ArrayValidator validator = new ArrayValidatorImpl();
         ArrayParser parser = new ArrayParserImpl();
         ArrayReader reader = new ArrayReaderImpl();
         ArrayFactory factory = new ArrayFactoryImpl();
-        ArrayCalculationService calculationService = new ArrayCalculationServiceImpl();
-        ArraySortService sortService = new ArraySortServiceImpl();
+        ArrayCalculationService calcService = new ArrayCalculationServiceImpl();
+        Repository repository = new RepositoryImpl();
 
         try {
+            // 1. Чтение данных
             List<String> lines = reader.readLines("data/input.txt");
-            int index = 1;
+
+            // 2. Обработка данных и добавление в репозиторий
             for (String line : lines) {
-                processLine(line, index, validator, parser, factory, calculationService, sortService);
-                index++;
+                if (validator.isValidLine(line)) {
+                    int[] values = parser.parse(line);
+                    ArrayEntity entity = factory.createArray(values);
+                    repository.add(entity);
+                    LOGGER.info("Successfully added to repository: {}", entity);
+                }
             }
+
+            // 3. Демонстрация спецификации (поиск массивов с суммой > 50)
+            LOGGER.info("--- Querying repository (Sum > 50) ---");
+            List<ArrayEntity> filtered = repository.query(new SumSpecification(50));
+            filtered.forEach(e -> LOGGER.info("Found: {}", e));
+
+            // 4. Демонстрация сортировки через компаратор
+            LOGGER.info("--- Sorting repository by Size ---");
+            List<ArrayEntity> all = repository.getAll();
+            all.sort(ArrayComparator.BY_SIZE);
+            all.forEach(e -> LOGGER.info("Sorted: {}", e));
+
         } catch (ArrayTaskException e) {
-            LOGGER.error("Application processing failed due to critical error: {}", e.getMessage(), e);
-        }
-    }
-
-    private void processLine(
-            String lineData,
-            int index,
-            ArrayValidator validator,
-            ArrayParser parser,
-            ArrayFactory factory,
-            ArrayCalculationService calculationService,
-            ArraySortService sortService) {
-
-        if (lineData != null && !lineData.isBlank() && validator.isValidLine(lineData)) {
-            try {
-                int[] parsedValues = parser.parse(lineData);
-                ArrayEntity arrayEntity = factory.createArray(parsedValues);
-
-                LOGGER.info("Line {}: Created array: {}", index, arrayEntity);
-
-                calculationService.findMin(arrayEntity).ifPresent(v -> LOGGER.info("Minimum: {}", v));
-                calculationService.findMax(arrayEntity).ifPresent(v -> LOGGER.info("Maximum: {}", v));
-                calculationService.sum(arrayEntity).ifPresent(v -> LOGGER.info("Sum: {}", v));
-                calculationService.average(arrayEntity).ifPresent(v -> LOGGER.info("Average: {}", v));
-
-                sortService.bubbleSort(arrayEntity);
-                LOGGER.info("Bubble sorted: {}", arrayEntity);
-
-            } catch (ArrayTaskException e) {
-                LOGGER.error("Line {} failed during processing: {}", index, e.getMessage());
-            }
-        } else {
-            LOGGER.warn("Line {} was skipped: Invalid or empty data", index);
+            LOGGER.error("Critical error in application: {}", e.getMessage(), e);
         }
     }
 
     public static void main(String[] args) {
-        Main application = new Main();
-        application.run();
+        new Main().run();
     }
 }
